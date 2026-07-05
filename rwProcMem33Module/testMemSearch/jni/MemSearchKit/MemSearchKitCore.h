@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 #ifndef MEM_SEARCH_KIT_CORE_H_
+=======
+﻿#ifndef MEM_SEARCH_KIT_CORE_H_
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 #define MEM_SEARCH_KIT_CORE_H_
 #include <memory>
 #include <vector>
@@ -167,7 +171,11 @@ namespace MemorySearchKit {
 					std::vector<ADDR_RESULT_INFO> vThreadOutput; //存放当前线程的搜索结果
 
 					constexpr bool isFloatVal = std::is_same_v<T, float> || std::is_same_v<T, double>;
+<<<<<<< HEAD
 					while (!(pForceStopSignal && *pForceStopSignal)) {
+=======
+					while (!pForceStopSignal || !*pForceStopSignal) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						uint64_t curMemBlockStartAddr = 0;
 						uint64_t curMemBlockSize = 0;
 						std::shared_ptr<unsigned char> spOutMemData;
@@ -175,24 +183,40 @@ namespace MemorySearchKit {
 
 						spvWaitScanMemBlockList->release_useless_mem_block();
 						if (!spvWaitScanMemBlockList->get_need_work_mem_block(splitSize, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
+<<<<<<< HEAD
 							break;
 						}
 
+=======
+							break; //没任务了
+						}
+
+						//读取这个目标内存section的内存数据时直接指针取值，节省开销
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						size_t nRealReadSize = min(curMemBlockSize - outCurWorkOffset, splitSize);
 						if (nRealReadSize == 0) {
 							continue;
 						}
 						char* pReadBuf = (char*)((char*)spOutMemData.get() + outCurWorkOffset);
+<<<<<<< HEAD
+=======
+						//寻找数值
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						std::vector<size_t> vFindAddr;
 
 						switch (scanType) {
 						case SCAN_TYPE::ACCURATE_VAL:
+<<<<<<< HEAD
+=======
+							//精确数值
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							if constexpr (isFloatVal) {
 								FindBetween<T>((size_t)(pReadBuf),
 									nRealReadSize, value1 - errorRange, value1 + errorRange, nScanAlignBytesCount, vFindAddr);
 							} else {
 								FindValue<T>((size_t)pReadBuf, nRealReadSize, value1, nScanAlignBytesCount, vFindAddr);
 							}
+<<<<<<< HEAD
 							break;
 						case SCAN_TYPE::LARGER_THAN_VAL:
 							FindGreater<T>((size_t)pReadBuf, nRealReadSize, value1, nScanAlignBytesCount, vFindAddr);
@@ -201,15 +225,37 @@ namespace MemorySearchKit {
 							FindLess<T>((size_t)pReadBuf, nRealReadSize, value1, nScanAlignBytesCount, vFindAddr);
 							break;
 						case SCAN_TYPE::BETWEEN_VAL:
+=======
+
+							break;
+						case SCAN_TYPE::LARGER_THAN_VAL:
+							//值大于
+							FindGreater<T>((size_t)pReadBuf, nRealReadSize, value1, nScanAlignBytesCount, vFindAddr);
+							break;
+						case SCAN_TYPE::LESS_THAN_VAL:
+							//值小于
+							FindLess<T>((size_t)pReadBuf, nRealReadSize, value1, nScanAlignBytesCount, vFindAddr);
+							break;
+						case SCAN_TYPE::BETWEEN_VAL:
+							//值在两者之间于
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							FindBetween<T>((size_t)pReadBuf, nRealReadSize, min(value1, value2), max(value1, value2), nScanAlignBytesCount, vFindAddr);
 							break;
 						default:
 							break;
 						}
 
+<<<<<<< HEAD
 						for (size_t addr : vFindAddr) {
 							ADDR_RESULT_INFO aInfo;
 							aInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset;
+=======
+
+
+						for (size_t addr : vFindAddr) {
+							ADDR_RESULT_INFO aInfo;
+							aInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset/*每个线程的起始位置*/;
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							aInfo.size = sizeof(T);
 
 							std::shared_ptr<unsigned char> sp(new unsigned char[aInfo.size], std::default_delete<unsigned char[]>());
@@ -409,12 +455,21 @@ namespace MemorySearchKit {
 						}
 
 						if (memAddrJob.size != sizeof(T)) {
+<<<<<<< HEAD
 						memAddrJob.size = sizeof(T);
 						std::shared_ptr<unsigned char> sp(new unsigned char[memAddrJob.size], std::default_delete<unsigned char[]>());
 						memAddrJob.spSaveData = sp;
 					}
 					memcpy(memAddrJob.spSaveData.get(), &temp, sizeof(T));
 					vThreadOutput.push_back(memAddrJob);
+=======
+							memAddrJob.size = sizeof(T);
+							std::shared_ptr<unsigned char> sp(new unsigned char[memAddrJob.size], std::default_delete<unsigned char[]>());
+							memAddrJob.spSaveData = sp;
+						}
+						memcpy(memAddrJob.spSaveData.get(), &temp, 1);
+						vThreadOutput.push_back(memAddrJob);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 					}
 					//将当前线程的搜索结果，汇总到父线程的全部搜索结果数组里
 					for (ADDR_RESULT_INFO& newAddr : vThreadOutput) {
@@ -473,8 +528,13 @@ namespace MemorySearchKit {
 				&vBatchBetweenValue, nBetweenValCount, &sortResultMap, nScanAlignBytesCount]
 			(size_t thread_id, std::atomic<bool>* pForceStopSignal)-> void {
 
+<<<<<<< HEAD
 					std::vector<BATCH_BETWEEN_VAL_ADDR_RESULT<T>> vThreadOutput;
 					while (!(pForceStopSignal && *pForceStopSignal)) {
+=======
+					std::vector<BATCH_BETWEEN_VAL_ADDR_RESULT<T>> vThreadOutput; //存放当前线程的搜索结果
+					while (!pForceStopSignal || !*pForceStopSignal) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						uint64_t curMemBlockStartAddr = 0;
 						uint64_t curMemBlockSize = 0;
 						std::shared_ptr<unsigned char> spOutMemData;
@@ -482,8 +542,14 @@ namespace MemorySearchKit {
 
 						spvWaitScanMemBlockList->release_useless_mem_block();
 						if (!spvWaitScanMemBlockList->get_need_work_mem_block(splitSize, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
+<<<<<<< HEAD
 							break;
 						}
+=======
+							break; //没任务了
+						}
+						//读取这个目标内存section的内存数据时直接指针取值，节省开销
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						size_t nRealReadSize = min(curMemBlockSize - outCurWorkOffset, splitSize);
 						if (nRealReadSize == 0) {
 							continue;
@@ -493,18 +559,33 @@ namespace MemorySearchKit {
 						for (size_t i = 0; i < nBetweenValCount; i++) {
 							auto& item = vBatchBetweenValue.at(i);
 
+<<<<<<< HEAD
 							std::vector<size_t> vFindAddr;
 
+=======
+							//寻找数值
+							std::vector<size_t> vFindAddr;
+
+							//值在两者之间于
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							FindBetween<T>((size_t)pReadBuf, nRealReadSize, min(item.val1, item.val2), max(item.val1, item.val2), nScanAlignBytesCount, vFindAddr);
 
 							for (size_t addr : vFindAddr) {
 								BATCH_BETWEEN_VAL_ADDR_RESULT<T> baInfo;
+<<<<<<< HEAD
 								baInfo.addrInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset;
+=======
+								baInfo.addrInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset/*每个线程的起始位置*/;
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 								baInfo.addrInfo.size = sizeof(T);
 								std::shared_ptr<unsigned char> sp(new unsigned char[baInfo.addrInfo.size], std::default_delete<unsigned char[]>());
 								memcpy(sp.get(), (void*)addr, baInfo.addrInfo.size);
 								baInfo.addrInfo.spSaveData = sp;
 
+<<<<<<< HEAD
+=======
+								//原始条件
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 								baInfo.originalCondition = item;
 
 								vThreadOutput.push_back(baInfo);
@@ -593,7 +674,11 @@ namespace MemorySearchKit {
 
 					std::vector<ADDR_RESULT_INFO> vThreadOutput; //存放当前线程的搜索结果
 
+<<<<<<< HEAD
 					while (!(pForceStopSignal && *pForceStopSignal)) {
+=======
+					while (!pForceStopSignal || !*pForceStopSignal) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						uint64_t curMemBlockStartAddr = 0;
 						uint64_t curMemBlockSize = 0;
 						std::shared_ptr<unsigned char> spOutMemData;
@@ -601,9 +686,16 @@ namespace MemorySearchKit {
 
 						spvWaitScanMemBlockList->release_useless_mem_block();
 						if (!spvWaitScanMemBlockList->get_need_work_mem_block(splitSize, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
+<<<<<<< HEAD
 							break;
 						}
 
+=======
+							break; //没任务了
+						}
+
+						//读取这个目标内存section的内存数据时直接指针取值，节省开销
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						size_t nRealReadSize = min((curMemBlockSize - outCurWorkOffset), splitSize);
 						if (nRealReadSize == 0) {
 							continue;
@@ -611,18 +703,35 @@ namespace MemorySearchKit {
 						char* pReadBuf = (char*)((char*)spOutMemData.get() + outCurWorkOffset);
 
 
+<<<<<<< HEAD
 						std::vector<size_t> vFindAddr;
 						if (isSimpleSearch) {
 							FindBytes((size_t)pReadBuf, nRealReadSize, (unsigned char*)&vFeaturesByte[0], nFeaturesByteLen,
 								nScanAlignBytesCount, vFindAddr);
 						} else {
+=======
+						//寻找字节集
+						std::vector<size_t> vFindAddr;
+						if (isSimpleSearch) {
+							//不需要容错搜索
+							FindBytes((size_t)pReadBuf, nRealReadSize, (unsigned char*)&vFeaturesByte[0], nFeaturesByteLen,
+								nScanAlignBytesCount, vFindAddr);
+						} else {
+							//需要容错搜索
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							FindFeaturesBytes((size_t)pReadBuf, nRealReadSize, (unsigned char*)&vFeaturesByte[0],
 								(const char*)spStrFuzzyCode.get(), nFeaturesByteLen, nScanAlignBytesCount, vFindAddr);
 						}
 
 						for (size_t addr : vFindAddr) {
+<<<<<<< HEAD
 							ADDR_RESULT_INFO aInfo;
 							aInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset;
+=======
+							//保存搜索结果
+							ADDR_RESULT_INFO aInfo;
+							aInfo.addr = (uint64_t)addr - (uint64_t)pReadBuf + curMemBlockStartAddr + outCurWorkOffset/*每个线程的起始位置*/;
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							aInfo.size = nFeaturesByteLen;
 							std::shared_ptr<unsigned char> sp(new unsigned char[aInfo.size], std::default_delete<unsigned char[]>());
 							memcpy(sp.get(), (void*)addr, aInfo.size);
@@ -953,15 +1062,27 @@ namespace MemorySearchKit {
 			
 			MultiThreadOnCpu(nThreadCount,
 				[pReadWriteProxy, hProcess, spvWaitScanMemBlockList](size_t thread_id, std::atomic<bool>* pForceStopSignal)->void {
+<<<<<<< HEAD
 					std::vector<COPY_MEM_INFO> vThreadOutput;
 
 					while (!(pForceStopSignal && *pForceStopSignal)) {
+=======
+					std::vector<COPY_MEM_INFO> vThreadOutput; //存放当前线程的搜索结果
+
+					while (!pForceStopSignal || !*pForceStopSignal) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						uint64_t curMemBlockStartAddr = 0;
 						uint64_t curMemBlockSize = 0;
 						std::shared_ptr<unsigned char> spOutMemData;
 						uint64_t outCurWorkOffset = 0;
 
 						if (!spvWaitScanMemBlockList->get_need_work_mem_block(0, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
+<<<<<<< HEAD
+=======
+							break; //没任务了
+						}
+						if (pForceStopSignal && *pForceStopSignal) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							break;
 						}
 					}

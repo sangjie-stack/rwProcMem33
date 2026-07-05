@@ -43,14 +43,27 @@ int findPID(CMemoryReaderWriter *pDriver, const char *lpszCmdline) {
 }
 
 
+<<<<<<< HEAD
 void normal_val_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWorkThreadCount) {
 
+=======
+//演示多线程普通搜索
+void normal_val_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWorkThreadCount) {
+
+	//获取进程数据内存区域
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 	std::vector<MemRegionItem> vScanMemMaps;
 	GetMemRegions(pRwDriver, hProcess,
 		REGION_R0_0,
 		vScanMemMaps);
 	if (!vScanMemMaps.size()) {
 		printf("无内存可搜索\n");
+<<<<<<< HEAD
+=======
+		//关闭进程
+		pRwDriver->CloseHandle(hProcess);
+		printf("调用驱动 CloseHandle:%" PRIu64 "\n", hProcess);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		fflush(stdout);
 		return;
 	}
@@ -163,6 +176,7 @@ void normal_val_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t
 	}
 
 }
+<<<<<<< HEAD
 void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWorkThreadCount) {
 
 	const char * targetModuleName = "libxxx.so";
@@ -171,12 +185,28 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 
 	std::vector<DRIVER_REGION_INFO> vExecList;
 	GetModuleExecAreaSection(pRwDriver, hProcess, targetModuleName, vExecList);
+=======
+//演示多线程正向遍历
+void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWorkThreadCount) {
+
+	//获取进程内存块地址列表
+	const char * targetModuleName = "libxxx.so";
+	std::vector<DRIVER_REGION_INFO> vDataList;
+	GetModuleDataAreaSection(pRwDriver, 1, targetModuleName, vDataList);
+
+	std::vector<DRIVER_REGION_INFO> vExecList;
+	GetModuleExecAreaSection(pRwDriver, 1, targetModuleName, vExecList);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 	if (vExecList.size() == 0) {
 		printf("GetMemModuleStartAddr失败");
 		return;
 	}
 	uint64_t execStartAddr = vExecList[0].baseaddress;
 
+<<<<<<< HEAD
+=======
+	//整理需要工作的内存区域
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 	std::shared_ptr<MemSearchSafeWorkBlockWrapper> spWorkMemWrapper = std::make_shared<MemSearchSafeWorkBlockWrapper>();
 	for (auto & item : vDataList) {
 		spWorkMemWrapper->push_back(item.baseaddress, item.size, 0, item.size);
@@ -192,6 +222,7 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 	struct OffsetResultInfo {
 		uint64_t offset[4] = { 0 };
 	};
+<<<<<<< HEAD
 	std::vector<OffsetResultInfo> vResultInfo;
 	std::mutex resultMutex;
 
@@ -200,21 +231,55 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 		(size_t thread_id, std::atomic<bool> *pForceStopSignal)->void {
 
 		std::vector<OffsetResultInfo> vThreadOutput;
+=======
+	std::vector<OffsetResultInfo> vResultInfo; //遍历结果
+
+	MultiThreadExecOnCpu(nWorkThreadCount,
+		[pRwDriver, hProcess, splitSize, spWorkMemWrapper, execStartAddr, &vResultInfo]
+		(size_t thread_id, std::atomic<bool> *pForceStopSignal)->void {
+
+		//////////////////////////////////////////////////////////////////////////
+
+		std::vector<OffsetResultInfo> vThreadOutput; //存放当前线程的搜索结果
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		uint64_t curMemBlockStartAddr = 0;
 		uint64_t curMemBlockSize = 0;
 		std::shared_ptr<unsigned char> spOutMemData;
 		uint64_t outCurWorkOffset = 0;
 
+<<<<<<< HEAD
 		while (!(pForceStopSignal && *pForceStopSignal)) {
 			if (!spWorkMemWrapper->get_need_work_mem_block(splitSize, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
 				break;
 			}
 		
+=======
+		while (!pForceStopSignal || !*pForceStopSignal) {
+			if (!spWorkMemWrapper->get_need_work_mem_block(splitSize, curMemBlockStartAddr, curMemBlockSize, spOutMemData, outCurWorkOffset)) {
+				break; //没任务了
+			}
+		
+			//DEBUG
+			//uint64_t debugAddr = execStartAddr + 0xAD58338;
+			//if (curMemBlockStartAddr <= debugAddr && (curMemBlockStartAddr + curMemBlockSize) > debugAddr) {
+			//	outCurWorkOffset = debugAddr - curMemBlockStartAddr;
+			//} else {
+			//	continue;
+			//}
+
+			//////////////////////////////////////////////////////////////////////////
+
+			//读取这个目标内存section的内存数据时直接指针取值，节省开销
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			size_t firstReadLen = 8;
 			if ((curMemBlockSize - outCurWorkOffset) < firstReadLen) {
 				continue;
 			}
 			uint64_t addr1 = *(uint64_t*)((char*)spOutMemData.get() + outCurWorkOffset);
+<<<<<<< HEAD
+=======
+			//////////////////////////////////////////////////////////////////////////
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			if (!pRwDriver->CheckProcessMemAddrValid(hProcess, addr1)) {
 				continue;
 			}
@@ -229,7 +294,11 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 
 				for (uint64_t x3 = 0; x3 < 0x200; x3 += 4) {
 					uint64_t addr3 = 0;
+<<<<<<< HEAD
 					if (!pRwDriver->ReadProcessMemory(hProcess, addr2 + x3, &addr3, 8, NULL)) {
+=======
+					if (!pRwDriver->ReadProcessMemory(1, addr2 + x3, &addr3, 8, NULL)) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						continue;
 					}
 					if (!pRwDriver->CheckProcessMemAddrValid(hProcess, addr3)) {
@@ -238,13 +307,21 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 
 					for (uint64_t x4 = 0; x4 < 0x200; x4 += 4) {
 						uint64_t addr4 = 0;
+<<<<<<< HEAD
 						if (!pRwDriver->ReadProcessMemory(hProcess, addr3 + x4, &addr4, 8, NULL)) {
+=======
+						if (!pRwDriver->ReadProcessMemory(1, addr3 + x4, &addr4, 8, NULL)) {
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 							continue;
 						}
 						if (!pRwDriver->CheckProcessMemAddrValid(hProcess, addr4)) {
 							continue;
 						}
 
+<<<<<<< HEAD
+=======
+						//目标
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 						uint64_t target = 0x7AF6E21600;
 						if (addr4 != target) {
 							continue;
@@ -260,7 +337,11 @@ void loop_search(CMemoryReaderWriter *pRwDriver, uint64_t hProcess, size_t nWork
 				}
 			}
 		}
+<<<<<<< HEAD
 		std::lock_guard<std::mutex> lock(resultMutex);
+=======
+		//将当前线程的搜索结果，汇总到父线程的全部搜索结果数组里
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		for (auto & item : vThreadOutput) {
 			vResultInfo.push_back(item);
 		}
@@ -292,6 +373,12 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 		vScanMemMaps);
 	if (!vScanMemMaps.size()) {
 		printf("无内存可搜索\n");
+<<<<<<< HEAD
+=======
+		//关闭进程
+		pRwDriver->CloseHandle(hProcess);
+		printf("调用驱动 CloseHandle:%" PRIu64 "\n", hProcess);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		fflush(stdout);
 		return;
 	}
@@ -339,7 +426,11 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 
 		SearchBatchBetweenValue<uint64_t>(
 			pRwDriver,
+<<<<<<< HEAD
 			hProcess,
+=======
+			1,
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			spvWaitScanMemBlock, //待搜索的内存区域
 			vWaitSearchBetweenVal, //待搜索的两值之间的数值数组
 			nWorkThreadCount, //搜索线程数
@@ -399,7 +490,11 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 
 		SearchBatchBetweenValue<uint64_t>(
 			pRwDriver,
+<<<<<<< HEAD
 			hProcess,
+=======
+			1,
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			spvWaitScanMemBlock, //待搜索的内存区域
 			vWaitSearchBetweenVal, //待搜索的两值之间的数值数组
 			nWorkThreadCount, //搜索线程数
@@ -431,36 +526,69 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 				linkAddrOffsetHelperMap[spBaseOffset->addr]->push_back(spBaseOffset);
 			}
 
+<<<<<<< HEAD
 			auto iterLastBase = linkAddrOffsetHelperMap.find(addrResult.originalCondition.markContext.u64Ctx);
 			if (iterLastBase != linkAddrOffsetHelperMap.end() && iterLastBase->second) {
 				for (auto spLastAddrNode : *iterLastBase->second) {
 					spLastAddrNode->vwpNextNode.push_back(spBaseOffset);
 					spBaseOffset->vwpLastNode.push_back(spLastAddrNode);
 				}
+=======
+			//将反向搜索到的地址偏移串联起来
+			auto spvLastBaseInfoObj = linkAddrOffsetHelperMap[addrResult.originalCondition.markContext.u64Ctx];
+			for (auto spLastAddrNode : *spvLastBaseInfoObj) {
+				spLastAddrNode->vwpNextNode.push_back(spBaseOffset);
+				spBaseOffset->vwpLastNode.push_back(spLastAddrNode);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			}
 
 
 		}
 	}
 
+<<<<<<< HEAD
 	if (vBetweenValSearchResult.size()) {
 
 		spvWaitScanMemBlock->recover_normal_block_origin_progress();
 
 		std::vector<BATCH_BETWEEN_VAL<uint64_t>> vWaitSearchBetweenVal;
+=======
+	//再次反向搜索
+	if (vBetweenValSearchResult.size()) {
+
+		//进度恢复
+		spvWaitScanMemBlock->recover_normal_block_origin_progress();
+
+		std::vector<BATCH_BETWEEN_VAL<uint64_t>> vWaitSearchBetweenVal; //待搜索的两值之间的数值数组
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		for (auto& addrResult : vBetweenValSearchResult) {
 			BATCH_BETWEEN_VAL<uint64_t> newBeteenVal;
 			memset(&newBeteenVal, 0, sizeof(newBeteenVal));
 			newBeteenVal.val1 = addrResult.addrInfo.addr - 0x250;
 			newBeteenVal.val2 = addrResult.addrInfo.addr + 0x250;
+<<<<<<< HEAD
 			newBeteenVal.markContext.u64Ctx = addrResult.addrInfo.addr;
 			vWaitSearchBetweenVal.push_back(newBeteenVal);
 
 		}
+=======
+			newBeteenVal.markContext.u64Ctx = addrResult.addrInfo.addr;//传递保存一个标识地址
+			vWaitSearchBetweenVal.push_back(newBeteenVal);
+
+		}
+		////DEBUG
+		//BATCH_BETWEEN_VAL<uint64_t> newBeteenVal;
+		//memset(&newBeteenVal, 0, sizeof(newBeteenVal));
+		//newBeteenVal.val1 = 0x780e7f56e0 - 0x250;
+		//newBeteenVal.val2 = 0x780e7f56e0 + 0x250;
+		//newBeteenVal.markContext.u64Ctx = 0x780e7f56e0;//传递保存一个标值地址
+		//vWaitSearchBetweenVal.push_back(newBeteenVal);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		vBetweenValSearchResult.clear();
 
 		SearchBatchBetweenValue<uint64_t>(
 			pRwDriver,
+<<<<<<< HEAD
 			hProcess,
 			spvWaitScanMemBlock,
 			vWaitSearchBetweenVal,
@@ -470,6 +598,18 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 
 		printf("3.共搜索出%zu个地址\n", vBetweenValSearchResult.size());
 
+=======
+			1,
+			spvWaitScanMemBlock, //待搜索的内存区域
+			vWaitSearchBetweenVal, //待搜索的两值之间的数值数组
+			nWorkThreadCount, //搜索线程数
+			vBetweenValSearchResult, //搜索后的结果
+			4); //扫描的对齐字节数
+
+		printf("3.共搜索出%zu个地址\n", vBetweenValSearchResult.size());
+
+		//记录搜索到的偏移
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 		for (size_t i = 0; i < vBetweenValSearchResult.size(); i++) {
 			auto& addrResult = vBetweenValSearchResult.at(i);
 
@@ -481,6 +621,10 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 			spBaseOffset->offset = addrResult.originalCondition.markContext.u64Ctx - curAddrVal;
 			vBaseAddrOffsetRecord.push_back(spBaseOffset);
 
+<<<<<<< HEAD
+=======
+			//辅助再次反向搜索找到父节点的vector
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			if (linkAddrOffsetHelperMap.find(spBaseOffset->addr) == linkAddrOffsetHelperMap.end()) {
 				std::shared_ptr<std::vector<std::shared_ptr<baseOffsetInfo>>> spvBaseInfoObj
 					= std::make_shared<std::vector<std::shared_ptr<baseOffsetInfo>>>();
@@ -491,12 +635,20 @@ void reverse_search(CMemoryReaderWriter* pRwDriver, uint64_t hProcess, size_t nW
 				linkAddrOffsetHelperMap[spBaseOffset->addr]->push_back(spBaseOffset);
 			}
 
+<<<<<<< HEAD
 			auto iterLastBase = linkAddrOffsetHelperMap.find(addrResult.originalCondition.markContext.u64Ctx);
 			if (iterLastBase != linkAddrOffsetHelperMap.end() && iterLastBase->second) {
 				for (auto spLastAddrNode : *iterLastBase->second) {
 					spLastAddrNode->vwpNextNode.push_back(spBaseOffset);
 					spBaseOffset->vwpLastNode.push_back(spLastAddrNode);
 				}
+=======
+			//将反向搜索到的地址偏移串联起来
+			auto spvLastBaseInfoObj = linkAddrOffsetHelperMap[addrResult.originalCondition.markContext.u64Ctx];
+			for (auto spLastAddrNode : *spvLastBaseInfoObj) {
+				spLastAddrNode->vwpNextNode.push_back(spBaseOffset);
+				spBaseOffset->vwpLastNode.push_back(spLastAddrNode);
+>>>>>>> 77f65634a89680148d5d23e35132cc9fda6712df
 			}
 
 
@@ -612,7 +764,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	//获取目标进程PID
-	const char *name = "com.miui.calculator";
+	const char *name = "com.tencent.tmgp.pubgmhd";
 	pid_t pid = findPID(&rwDriver, name);
 	if (pid == 0) {
 		printf("找不到进程\n");

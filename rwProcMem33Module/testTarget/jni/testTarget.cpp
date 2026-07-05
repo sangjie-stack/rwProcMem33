@@ -1,4 +1,4 @@
-﻿#include <cstdio>
+#include <cstdio>
 #include <string.h> 
 #include <stdlib.h>
 #include <unistd.h>
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	//获取目标进程PID
-	const char *name = "com.miui.calculator";
+	const char *name = "com.tencent.tmgp.pubgmhd";
 	pid_t pid = findPID(&rwDriver, name);
 	if (pid == 0) {
 		printf("找不到进程\n");

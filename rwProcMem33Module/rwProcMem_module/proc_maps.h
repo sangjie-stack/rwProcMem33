@@ -1,14 +1,28 @@
-﻿#ifndef PROC_MAPS_H_
+#ifndef PROC_MAPS_H_
 #define PROC_MAPS_H_
 
-//声明
-//////////////////////////////////////////////////////////////////////////
 #include <linux/pid.h>
 #include <linux/types.h>
 #include <linux/mm_types.h>
 #if MY_LINUX_VERSION_CODE >= KERNEL_VERSION(4,14,83)
 #include <linux/sched/task.h>
 #include <linux/sched/mm.h>
+#endif
+
+#ifndef vma_is_initial_heap
+static inline bool vma_is_initial_heap(struct vm_area_struct *vma) {
+    return vma->vm_start == vma->vm_mm->start_brk && vma->vm_end == vma->vm_mm->brk;
+}
+#endif
+
+#ifndef vma_is_initial_stack
+static inline bool vma_is_initial_stack(struct vm_area_struct *vma) {
+#ifdef CONFIG_STACK_GROWSUP
+    return vma->vm_start == vma->vm_mm->start_stack;
+#else
+    return vma->vm_end == vma->vm_mm->start_stack;
+#endif
+}
 #endif
 
 static inline int down_read_mmap_lock(struct mm_struct *mm);

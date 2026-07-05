@@ -25,7 +25,7 @@ static long x_probe_kernel_read(void* bounce, const char* ptr, size_t sz) {
 #endif
 
 
-#if MY_LINUX_VERSION_CODE < KERNEL_VERSION(6,6,0)
+#if MY_LINUX_VERSION_CODE >= KERNEL_VERSION(6,6,0)
 static inline pte_t x_pte_mkwrite(pte_t pte) {
     return pte_mkwrite(pte);
 }
